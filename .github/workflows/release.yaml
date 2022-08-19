@@ -1,0 +1,57 @@
+name: ac86u
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: ac86u build cmd
+        env:
+          CGO_ENABLED: 0
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          mkdir -p build
+          go build -o ./build/gitops-tools-linux-amd64 -trimpath -ldflags "-s -w" .
+          ls -l ./build/
+      # publish release asset
+      - name: zip dist
+        run: |
+          cd ./build
+          zip -Jr ./gitops-tools-linux-amd64.zip ./gitops-tools-linux-amd64
+          ls -l
+      - name: Set current date as env variable
+        run: echo "DATEASTAG::$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: ${{ env.DATEASTAG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.DATEASTAG }}
+          release_name: ${{ env.DATEASTAG }}
+          draft: false
+          prerelease: false
+      # if: ${{ github.ref != 'refs/heads/main' }}
+      - name: Upload Release Assets
+        id: upload-release-assets
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: ./build/*
