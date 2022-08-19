@@ -37,6 +37,7 @@ var gitCmd = &cobra.Command{
 	Long: `git 命令可实现远程仓库控制相关操作。
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		ezap.SetLogTime("")
 		ezap.Warn("添加 -h 参数查看使用命令帮助")
 	},
 }

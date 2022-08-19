@@ -63,6 +63,10 @@ func ParseGcc(gcc string) (*GitClient, error) {
 		Headers:  headers,
 	}
 
+	if gitClient.Project == "" || gitClient.Address == "" {
+		ezap.Fatal("输入配置串错误， ", gcc)
+	}
+
 	ezap.Debugf("%+v\n", *gitClient)
 	return gitClient, nil
 }
