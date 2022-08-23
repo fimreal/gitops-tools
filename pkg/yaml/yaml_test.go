@@ -1,4 +1,4 @@
-package k8syaml
+package yaml
 
 import (
 	"bytes"
@@ -281,11 +281,7 @@ func TestWhatKindOf(t *testing.T) {
 
 	dataArr := bytes.Split(b, []byte("---\n"))
 	for _, desc := range dataArr {
-		kind, err := WhatKindOf(desc)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Log(kind)
+		t.Log(WhatKindOf(desc))
 	}
 }
 
@@ -308,13 +304,13 @@ func TestUpdateImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mfile.WriteToFile("clash-new.yaml", nil)
+	mfile.WriteToFile("clash.yaml", nil)
 	for _, y := range k8syaml {
 		err := y.UpdateImage("docker.io/epurs/openresty:latest", "")
 		if err != nil {
 			t.Fatal(err)
 		}
-		mfile.AppendToFile("clash-new.yaml", y.ByteData)
-		mfile.AppendToFile("clash-new.yaml", []byte("---\n"))
+		mfile.AppendToFile("clash.yaml", y.ByteData)
+		mfile.AppendToFile("clash.yaml", []byte("---\n"))
 	}
 }
