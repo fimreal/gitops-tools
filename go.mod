@@ -3,10 +3,10 @@ module github.com/fimreal/gitops-tools
 go 1.19
 
 require (
-	github.com/fimreal/goutils v0.0.0-20220817091135-4a566d767f72
+	github.com/fimreal/goutils v0.0.0-20220823021452-778178c857f1
 	github.com/spf13/cobra v1.5.0
 	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
+	k8s.io/client-go v0.24.4
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -30,6 +30,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	k8s.io/apimachinery v0.24.4 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect

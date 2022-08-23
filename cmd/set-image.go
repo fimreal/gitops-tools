@@ -17,17 +17,17 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/fimreal/gitops-tools/pkg/k8syaml"
 	"github.com/fimreal/goutils/ezap"
+	mfile "github.com/fimreal/goutils/file"
 	"github.com/spf13/cobra"
 )
 
 // imageCmd represents the image command
 var (
 	// 更新镜像的容器名字
-	container *string
-	file      *string
+	containerName *string
+	file          *string
 
 	imageCmd = &cobra.Command{
 		Use:   "image",
@@ -39,19 +39,29 @@ var (
 	
 	`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("image called")
-
 			if len(args) != 1 {
-				ezap.Fatal("请指定镜像名字")
-			}
-
-			if *container == "" {
-				ezap.Warn("未指定容器名字，修改配置文件中第一个镜像")
-				*container = "containerName"
+				ezap.Fatal("请指定更新使用的镜像名字")
 			}
 
 			// do
-			ezap.Infof("成功将文件[%s]中容器[%s]镜像修改为: %s", *file, *container, args[0])
+			yamlByte, err := k8syaml.SplitYamlFile(*file)
+			if err != nil {
+				ezap.Fatal(err)
+			}
+
+			var newFileByte []byte
+			for _, y := range yamlByte {
+				err := y.UpdateImage("docker.io/epurs/openresty:latest", containerName)
+				if err != nil {
+					ezap.Fatal(err)
+				}
+				newFileByte = append(newFileByte, y.ByteData, []byte("---\n"))
+			}
+
+			// 清空文件
+			mfile.WriteToFile(*file, nil)
+			// 写入文件
+			mfile.AppendToFile(*file+".new", newFileByte)
 
 		},
 	}
@@ -71,5 +81,5 @@ func init() {
 	// imageCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	file = imageCmd.Flags().StringP("file", "f", "", "指定对其操作的文件")
 	imageCmd.MarkFlagRequired("file")
-	container = imageCmd.Flags().StringP("container", "c", "", "更新使用的镜像, 默认更新文件中第一个镜像")
+	containerName = imageCmd.Flags().StringP("container", "c", "", "更新使用的镜像, 默认更新文件中第一个镜像")
 }
