@@ -17,7 +17,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"github.com/fimreal/gitops-tools/pkg/k8syaml"
+	"github.com/fimreal/gitops-tools/pkg/yaml"
+
 	"github.com/fimreal/goutils/ezap"
 	mfile "github.com/fimreal/goutils/file"
 	"github.com/spf13/cobra"
@@ -33,25 +34,37 @@ var (
 		Use:   "image",
 		Short: "更新 kubernetes yaml 配置中镜像",
 		Long: `
-	用法说明：
+用法举例：
+
+  gitops-tools set image -f demo.yaml -c [container name] <image name>
 	
-	gitops-tools set image -f demo.yaml -c [container name] <image name>
-	
-	`,
+`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// 初始化部分
+			ezap.SetLogTime("")
+			if *Verbose {
+				ezap.SetLevel("debug")
+				if len(args) == 0 {
+					ezap.Error("未找到需要删除的文件名，请使用 -h 查看命令帮助")
+				}
+				for i, v := range args {
+					ezap.Debugf("接收到参数: %d:%s", i, v)
+				}
+			}
+
 			if len(args) != 1 {
 				ezap.Fatal("请指定更新使用的镜像名字")
 			}
 
 			// do
-			yamlByte, err := k8syaml.SplitYamlFile(*file)
+			yamlByte, err := yaml.SplitYamlFile(*file)
 			if err != nil {
 				ezap.Fatal(err)
 			}
 
-			var newFileByte []byte
+			var newFileByte [][]byte
 			for _, y := range yamlByte {
-				err := y.UpdateImage("docker.io/epurs/openresty:latest", containerName)
+				err := y.UpdateImage(args[0], *containerName)
 				if err != nil {
 					ezap.Fatal(err)
 				}
@@ -61,7 +74,9 @@ var (
 			// 清空文件
 			mfile.WriteToFile(*file, nil)
 			// 写入文件
-			mfile.AppendToFile(*file+".new", newFileByte)
+			for _, frag := range newFileByte {
+				mfile.AppendToFile(*file, frag)
+			}
 
 		},
 	}

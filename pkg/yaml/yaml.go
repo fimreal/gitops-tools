@@ -1,4 +1,4 @@
-package k8syaml
+package yaml
 
 import (
 	"bytes"
@@ -36,25 +36,25 @@ func SplitYamlFile(filename string) ([]K8sYaml, error) {
 
 	var yamlData []K8sYaml
 	for _, v := range dataArr {
-		kind, err := WhatKindOf(v)
-		if err != nil {
-			return nil, err
+		if len(v) == 0 {
+			continue
 		}
-		k8syaml := K8sYaml{Kind: kind, ByteData: v}
+		k8syaml := K8sYaml{Kind: WhatKindOf(v), ByteData: v}
 		yamlData = append(yamlData, k8syaml)
 	}
 	return yamlData, nil
 }
 
-func WhatKindOf(yaml []byte) (kind string, err error) {
+func WhatKindOf(yaml []byte) (kind string) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, k, err := decode(yaml, nil, nil)
 	if err != nil {
-		ezap.Fatal(err)
+		ezap.Warn(err)
+		return ""
 	}
 	ezap.Debug(obj)
 
-	return k.Kind, err
+	return k.Kind
 }
 
 func (y *K8sYaml) UpdateImage(image string, containerName string) error {
@@ -65,7 +65,6 @@ func (y *K8sYaml) UpdateImage(image string, containerName string) error {
 		if err != nil {
 			return err
 		}
-		ezap.Debug("解析 yaml 成功")
 
 		podspec := PodSpec(workload.Spec.Template.Spec)
 		err = podspec.UpdateImage(image, containerName)
@@ -85,7 +84,6 @@ func (y *K8sYaml) UpdateImage(image string, containerName string) error {
 		if err != nil {
 			return err
 		}
-		ezap.Debug("解析 yaml 成功")
 		podspec := PodSpec(workload.Spec.Template.Spec)
 		err = podspec.UpdateImage(image, containerName)
 		if err != nil {
@@ -125,6 +123,7 @@ func (y *K8sYaml) UpdateImage(image string, containerName string) error {
 
 func (p *PodSpec) UpdateImage(image string, containerName string) error {
 	c := p.Containers
+	ezap.Debug("解析 yaml 成功，准备修改镜像")
 	if len(c) < 1 {
 		ezap.Fatal("传入文件格式有误，请查证后重试")
 	} else if len(c) > 1 {
@@ -133,7 +132,7 @@ func (p *PodSpec) UpdateImage(image string, containerName string) error {
 		}
 		for i := range c {
 			if c[i].Name == containerName {
-				ezap.Infof("旧容器[%s]镜像为: %s", c[i].Name, c[i].Image)
+				ezap.Infof("找到旧容器[%s]镜像为: %s", c[i].Name, c[i].Image)
 				c[i].Image = image
 				ezap.Infof("将容器[%s]镜像更新为: %s", c[i].Name, c[i].Image)
 				return nil
@@ -141,7 +140,7 @@ func (p *PodSpec) UpdateImage(image string, containerName string) error {
 		}
 	}
 
-	ezap.Infof("旧容器[%s]镜像为: %s", c[0].Name, c[0].Image)
+	ezap.Infof("找到旧容器[%s]镜像为: %s", c[0].Name, c[0].Image)
 	c[0].Image = image
 	ezap.Infof("将容器[%s]镜像更新为: %s", c[0].Name, c[0].Image)
 	return nil
