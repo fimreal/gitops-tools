@@ -9,7 +9,7 @@ import (
 	mfile "github.com/fimreal/goutils/file"
 )
 
-const demo = `apiVersion: apps/v1
+const clash = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   creationTimestamp: null
@@ -187,8 +187,7 @@ spec:
   tls:
     - secretName: epurs-com
 `
-const demoSTS = `---
-
+const pgsql = `
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -269,48 +268,56 @@ spec:
     app: postgres`
 
 func init() {
-	os.WriteFile("clash.yaml", []byte(demo), 0644)
-	os.WriteFile("postgres.yaml", []byte(demoSTS), 0644)
+	os.WriteFile("clash.yaml", []byte(clash), 0644)
+	os.WriteFile("postgres.yaml", []byte(pgsql), 0644)
 }
 
-func TestWhatKindOf(t *testing.T) {
-	b, err := os.ReadFile("deploy.yaml")
-	if err != nil {
-		ezap.Fatal(err)
-	}
+var testFiles = []string{"clash.yaml", "postgres.yaml"}
 
-	dataArr := bytes.Split(b, []byte("---\n"))
-	for _, desc := range dataArr {
-		t.Log(WhatKindOf(desc))
+func TestWhatKindOf(t *testing.T) {
+	for _, f := range testFiles {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			ezap.Fatal(err)
+		}
+
+		dataArr := bytes.Split(b, []byte("---\n"))
+		for _, desc := range dataArr {
+			t.Log(WhatKindOf(desc))
+		}
 	}
 }
 
 func TestSplitYamlFile(t *testing.T) {
+	for _, f := range testFiles {
 
-	k8syaml, err := SplitYamlFile("clash.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, y := range k8syaml {
-		t.Log(y.Kind)
-		t.Log(string(y.ByteData))
+		k8syaml, err := SplitYamlFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, y := range k8syaml {
+			t.Log(y.Kind)
+			t.Log(string(y.ByteData))
+		}
 	}
 }
 
 func TestUpdateImage(t *testing.T) {
 	// ezap.SetLevel("debug")
+	for _, f := range testFiles {
 
-	k8syaml, err := SplitYamlFile("clash.yaml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	mfile.WriteToFile("clash.yaml", nil)
-	for _, y := range k8syaml {
-		err := y.UpdateImage("docker.io/epurs/openresty:latest", "")
+		k8syaml, err := SplitYamlFile(f)
 		if err != nil {
 			t.Fatal(err)
 		}
-		mfile.AppendToFile("clash.yaml", y.ByteData)
-		mfile.AppendToFile("clash.yaml", []byte("---\n"))
+		mfile.WriteToFile(f, nil)
+		for _, y := range k8syaml {
+			err := y.UpdateImage("docker.io/epurs/openresty:latest", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			mfile.AppendToFile(f, y.ByteData)
+			mfile.AppendToFile(f, []byte("---\n"))
+		}
 	}
 }

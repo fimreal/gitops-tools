@@ -17,8 +17,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -27,9 +25,9 @@ var setCmd = &cobra.Command{
 	Use:   "set",
 	Short: "set 用于快速格式化修改文件",
 	Long:  `set 用于快速格式化修改文件`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("set called")
-	},
+	// Run: func(cmd *cobra.Command, args []string) {
+	// 	fmt.Println("set called")
+	// },
 }
 
 func init() {

@@ -2,6 +2,7 @@ package yaml
 
 import (
 	"bytes"
+	"errors"
 	"os"
 
 	"github.com/fimreal/goutils/ezap"
@@ -95,6 +96,20 @@ func (y *K8sYaml) UpdateImage(image string, containerName string) error {
 		if err != nil {
 			return err
 		}
+
+		// 删掉无用 appsv1.StatefulSetStatus, 多用了两次 yaml 解析，有更好方法就好了
+		sts := make(map[string]interface{})
+		err = yaml.Unmarshal(y.ByteData, &sts)
+		if err != nil {
+			return err
+		}
+		delete(sts, "status")
+		// 修改后内容写回 yaml
+		y.ByteData, err = yaml.Marshal(sts)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	case "DaemonSet":
 		var workload appsv1.DaemonSet
@@ -125,10 +140,10 @@ func (p *PodSpec) UpdateImage(image string, containerName string) error {
 	c := p.Containers
 	ezap.Debug("解析 yaml 成功，准备修改镜像")
 	if len(c) < 1 {
-		ezap.Fatal("传入文件格式有误，请查证后重试")
+		return errors.New("传入文件格式有误，请查证后重试")
 	} else if len(c) > 1 {
 		if containerName == "" {
-			ezap.Fatal("传入文件包含多个容器配置，请指定需要修改的容器名称")
+			return errors.New("传入文件包含多个容器配置，请指定需要修改的容器名称")
 		}
 		for i := range c {
 			if c[i].Name == containerName {
