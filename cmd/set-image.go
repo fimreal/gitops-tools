@@ -68,7 +68,7 @@ var (
 				if err != nil {
 					ezap.Fatal(err)
 				}
-				newFileByte = append(newFileByte, y.ByteData, []byte("---\n"))
+				newFileByte = append(newFileByte, y.ByteData, []byte("\n---\n"))
 			}
 
 			// 清空文件
