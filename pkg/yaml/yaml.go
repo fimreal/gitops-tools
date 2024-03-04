@@ -33,7 +33,11 @@ func SplitYamlFile(filename string) ([]K8sYaml, error) {
 	if err != nil {
 		return nil, err
 	}
-	dataArr := bytes.Split(dataByte, []byte("---\n"))
+	// 检查结尾是否是换行符，如果不是则加上
+	if len(dataByte) > 0 && dataByte[len(dataByte)-1] != '\n' {
+		dataByte = append(dataByte, '\n')
+	}
+	dataArr := bytes.Split(dataByte, []byte("\n---\n"))
 
 	var yamlData []K8sYaml
 	for _, v := range dataArr {
